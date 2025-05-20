@@ -9,7 +9,10 @@ type PendingGame = {
     creatorId: string;
     creatorName: string;
     bet: number;
+    rounds: number; // теперь поддержка раундов!
 };
+
+const ROUND_OPTIONS = [1, 3, 5, 7, 9];
 
 export default function App() {
     const [name, setName] = useState("");
@@ -19,6 +22,7 @@ export default function App() {
     const [creatingGame, setCreatingGame] = useState(false);
     const [joiningGame, setJoiningGame] = useState(false);
     const [bet, setBet] = useState<number>(100);
+    const [rounds, setRounds] = useState<number>(3); // default 3 раунда
     const [gameState, setGameState] = useState<any>(null); // start_game info
     const [currentTurnId, setCurrentTurnId] = useState<string>("");
     const [shuffleUsed, setShuffleUsed] = useState<[boolean, boolean]>([false, false]);
@@ -45,7 +49,8 @@ export default function App() {
             setWaitingForOpponent(false);
         });
         socket.on("turn", (data) => {
-            setCurrentTurnId(data.currentTurnId || "");
+            console.log("TURN from server", data); // Добавь это для дебага!
+            if (data.currentTurnId) setCurrentTurnId(data.currentTurnId);
             if (data.shuffleUsed) setShuffleUsed(data.shuffleUsed);
         });
         socket.on("error_msg", (data) => {
@@ -71,7 +76,7 @@ export default function App() {
 
     function handleCreateGame() {
         if (bet < 1) return;
-        socket.emit("create_game", { bet });
+        socket.emit("create_game", { bet, rounds });
         setCreatingGame(false);
         setWaitingForOpponent(true);
     }
@@ -143,10 +148,15 @@ export default function App() {
                     players={gameState.players}
                     me={name}
                     currentTurnId={currentTurnId}
+                    setCurrentTurnId={setCurrentTurnId} // <-- прокинь сюда!
                     shuffleUsed={shuffleUsed}
+                    bet={gameState.bet}
+                    rounds={gameState.rounds}
+                    roundWins={gameState.roundWins}
+                    currentRound={gameState.currentRound}
                 />
                 <div className="fixed top-2 left-4 text-md bg-gray-700 px-3 py-1 rounded">
-                    Ставка: <b>{gameState.bet}</b>
+                    Ставка: <b>{gameState.bet}</b> &nbsp; | &nbsp; Раундов: <b>{gameState.rounds}</b>
                 </div>
             </div>
         );
@@ -180,14 +190,31 @@ export default function App() {
                 {creatingGame && (
                     <div className="mb-6 p-4 bg-gray-800 rounded shadow-xl">
                         <h2 className="mb-2">Создать игру</h2>
-                        <input
-                            type="number"
-                            min={1}
-                            className="p-2 rounded text-black mb-2"
-                            value={bet}
-                            onChange={e => setBet(Number(e.target.value))}
-                        />
-                        <button className="ml-4 px-4 py-2 bg-blue-500 rounded" onClick={handleCreateGame}>
+                        <div className="mb-2">
+                            <input
+                                type="number"
+                                min={1}
+                                className="p-2 rounded text-black mr-2"
+                                value={bet}
+                                onChange={e => setBet(Number(e.target.value))}
+                            />
+                            <span>Ставка</span>
+                        </div>
+                        <div className="mb-2">
+                            <select
+                                className="p-2 rounded text-black"
+                                value={rounds}
+                                onChange={e => setRounds(Number(e.target.value))}
+                            >
+                                {ROUND_OPTIONS.map(opt => (
+                                    <option key={opt} value={opt}>
+                                        {opt} раунд{opt > 1 ? "ов" : ""}
+                                    </option>
+                                ))}
+                            </select>
+                            <span className="ml-2">Количество раундов</span>
+                        </div>
+                        <button className="mt-2 px-4 py-2 bg-blue-500 rounded" onClick={handleCreateGame}>
                             ОК
                         </button>
                         <button className="ml-2 px-4 py-2 bg-gray-600 rounded" onClick={() => setCreatingGame(false)}>
@@ -204,7 +231,7 @@ export default function App() {
                             {pendingGames.map((g) => (
                                 <li key={g.id} className="mb-2 flex items-center justify-between">
                                     <span>
-                                        <b>{g.creatorName}</b> — ставка <b>{g.bet}</b>
+                                        <b>{g.creatorName}</b> — ставка <b>{g.bet}</b>, раундов: <b>{g.rounds ?? 3}</b>
                                     </span>
                                     <button
                                         className="ml-4 px-3 py-1 bg-green-500 rounded"
