@@ -141,8 +141,9 @@ export default function Game({ socket, room, players, me, currentTurnId, shuffle
                 <b>Игроки:</b> {players.join(" vs ")} {me && < span > (вы: {me})</span>}
                 </div>
                 <div className="mb-2">
-                <b>Счёт по раундам:</b> {players[0]} <span className="text-blue-300">{roundWins[0]}</span> : <span
-                className="text-blue-300">{roundWins[1]}</span> {players[1]}<br/>
+                <b>Счёт по раундам:</b> {players[0]} <span className="text-blue-300">{roundWins[0]}</span> : <span className="text-blue-300">{roundWins[1]}</span> {players[1]}
+
+                <br/>
                 <b>Текущий раунд:</b> {currentRound} / {rounds}
             </div>
             <div className="mb-2">
