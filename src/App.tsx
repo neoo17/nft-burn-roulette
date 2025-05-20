@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { io, Socket } from "socket.io-client";
 import Game from "./components/Game";
 
-const socket: Socket = io("http://localhost:4000");
+const socket: Socket = io("https://nft-burn-roulette-backand-production.up.railway.app");
 
 type PendingGame = {
     id: string;
